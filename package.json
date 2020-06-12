@@ -1,0 +1,15 @@
+{
+  "name": "sql-to-pg",
+  "version": "0.0.1",
+  "description": "generate code from SQL files",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.2.1",
+    "pg-cursor": "^2.2.1"
+  }
+}
