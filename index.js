@@ -32,27 +32,26 @@ module.exports = (config) => {
         }
     });
 
-    const updateFn = (sql) => (...params) => {
+    const updateFn = (sql, single) => (...params) => {
         return withTransaction(async (client) => {
             const {rows} = await client.query(sql, params);
             return single ? first(rows) : rows;
         });
     };
-    const queryFn = (sql) => (...params) => {
+
+    const queryFn = (sql, single) => async (...params) => {
         const {rows} = await query(sql, params);
         return single ? first(rows) : rows;
     };
 
     const toJS = (options) => ([name, sql]) => {
-        let {
-            tx,
-            single
-        } = options[name];
+        let tx = options[name] && options[name].tx;
+        let single = options[name] && options[name].single;
 
         if (tx === undefined) tx = options.tx(name, sql);
         if (single === undefined) single = options.single(name, sql);
 
-        const fn = tx ? updateFn(sql) : queryFn(sql);
+        const fn = tx ? updateFn(sql, single) : queryFn(sql, single);
         return [
             name,
             fn
@@ -61,12 +60,13 @@ module.exports = (config) => {
 
     const isUpdate = (name, sql) => /INSERT|UPDATE|DELETE/.test(sql);
     const isSingle = (name) => /^(findOne|updateOne|deleteOne|createOne)/.test(name);
-    const withOptions = (options) => ({tx: isUpdate, single isSingle, ...options});
+    const withOptions = (options) => ({tx: isUpdate, single: isSingle, ...options});
     
     const isSqlFile = (f) => path.extname(f) === '.sql';
     const toMethodName = (f) => path.basename(f).replace(/\.sql$/, '');
     const readSql = (f) => fs.readFileSync(f, 'utf-8');
-    const generate = (dir, options = withOptions) => {
+
+    const generate = (dir, options = withOptions()) => {
         return Object.fromEntries(
             fs.readdirSync(dir)
                 .filter(isSqlFile)
@@ -74,13 +74,13 @@ module.exports = (config) => {
                 .map(toJS(options)));
     };
 
-    const pairsFrom(...args) {
+    const pairsFrom = (...args) => {
         const result = [];
         for (let i = 0; i < args.length; i += 2) {
             result.push([args[i], args[i+1]]);
         }
         return result;
-    }
+    };
 
     const txSeries = (client) => async (...args) => {
         assert(args.length % 2 === 0, 'must be even number of args');
@@ -94,7 +94,7 @@ module.exports = (config) => {
     const txParallel = (client) => async (...args) => {
         assert(args.length % 2 === 0, 'must be even number of args');
         return Promise.all(pairsFrom(args).map(([sql, params]) => client.query(sql, params)));
-    }
+    };
 
     const txWaterfall = (client) => async (...args) => {
         assert(args.length %2 === 0, 'must be even number of args');
@@ -103,7 +103,8 @@ module.exports = (config) => {
         for (const [sql, paramFn] of pairsFrom(args)) {
             lastResult = await client.query(sql, paramFn(lastResult));
             results.push(lastResult);
-        };
+        }
+        return results;
     };
     return {
         withOptions,

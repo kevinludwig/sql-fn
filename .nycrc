@@ -1,0 +1,23 @@
+{
+	"check-coverage": true,
+    "per-file": false,
+    "lines": 90,
+    "statements": 90,
+    "functions": 90,
+    "branches": 80,
+    "include": [
+      "index.js"
+    ],
+    "reporter": [
+      "lcov",
+      "json",
+	  "text",
+      "text-summary"
+    ],
+    "require": [
+    ],
+    "extension": [
+    ],
+    "cache": false,
+    "all": true
+}
