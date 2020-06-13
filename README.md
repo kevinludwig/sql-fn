@@ -91,7 +91,7 @@ const {
         findAllPersons,
         createOnePerson
     }
-} = generate('./sql', withOptions({ createPerson: {single: true, tx: false} );
+} = generate('./sql', withOptions({ createOnePerson: {single: true, tx: false} );
 ```
 
 ### Advanced Use Cases
