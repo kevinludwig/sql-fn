@@ -1,5 +1,5 @@
 {
-  "name": "sql-to-pg",
+  "name": "sql-fn",
   "version": "0.0.1",
   "description": "generate code from SQL files",
   "main": "index.js",

@@ -1,6 +1,8 @@
-# sql-to-pg
+# sql-fn
 
-Convert SQL files to executing code in a few lines of javascript.
+SQL in, functions out. No ORM. No learning curve.
+
+Loosely inspired by clojure's hugsql library.
 
 ### Basic Usage
 
