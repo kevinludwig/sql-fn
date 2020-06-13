@@ -67,11 +67,15 @@ module.exports = (config) => {
     const readSql = (f) => fs.readFileSync(f, 'utf-8');
 
     const generate = (dir, options = withOptions()) => {
-        return Object.fromEntries(
-            fs.readdirSync(dir)
-                .filter(isSqlFile)
-                .map(entry => [toMethodName(entry), readSql(path.join(dir, entry))])
-                .map(toJS(options)));
+        const sql = fs.readdirSync(dir)
+            .filter(isSqlFile)
+            .map(entry => [toMethodName(entry), readSql(path.join(dir, entry))]);
+
+        const fns = Object.fromEntries(sql.map(toJS(options)));
+        return {
+            sql: Object.fromEntries(sql),
+            fns
+        };
     };
 
     const pairsFrom = (...args) => {
@@ -82,25 +86,25 @@ module.exports = (config) => {
         return result;
     };
 
-    const txSeries = (client) => async (...args) => {
+    const txSeries = (...args) => async (client) => {
         assert(args.length % 2 === 0, 'must be even number of args');
         const results = [];
-        for (const [sql, params] of pairsFrom(args)) {
+        for (const [sql, params] of pairsFrom(...args)) {
             results.push(await client.query(sql, params));
         }
         return results;
     };
 
-    const txParallel = (client) => async (...args) => {
+    const txParallel = (...args) => async (client) => {
         assert(args.length % 2 === 0, 'must be even number of args');
-        return Promise.all(pairsFrom(args).map(([sql, params]) => client.query(sql, params)));
+        return Promise.all(pairsFrom(...args).map(([sql, params]) => client.query(sql, params)));
     };
 
-    const txWaterfall = (client) => async (...args) => {
+    const txWaterfall = (...args) => async (client) => {
         assert(args.length %2 === 0, 'must be even number of args');
         const results = [];
         let lastResult = null;
-        for (const [sql, paramFn] of pairsFrom(args)) {
+        for (const [sql, paramFn] of pairsFrom(...args)) {
             lastResult = await client.query(sql, paramFn(lastResult));
             results.push(lastResult);
         }
