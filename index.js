@@ -1,6 +1,7 @@
 const fs = require('fs'),
     assert = require('assert'),
     path = require('path'),
+    {promisify} = require('util'),
     {Pool, Client} = require('pg'),
     Cursor = require('pg-cursor');
 
@@ -47,14 +48,19 @@ module.exports = (config) => {
     const cursorFn = (sql, n) => async function* (...params) {
         const client = await pool.connect();
         try {
-            const cursor = client.query(new Cursor(query, params));
+            const cursor = client.query(new Cursor(sql, params));
             const read = promisify(cursor.read.bind(cursor));
             const close = promisify(cursor.close.bind(cursor));
-
-            for await (const rows of read(n)) {
-                yield rows;
+            
+            try {
+                let rows = await read(n);
+                while (rows.length) {
+                    yield rows;
+                    rows = await read(n);
+                }
+            } finally {
+                await close();
             }
-            await close();
         } finally {
             client.release();
         }

@@ -101,7 +101,7 @@ describe('sql-to-pg', () => {
             await createOnePerson(i.toString(), 'Vera', 'Lynn', 75, '111-222-3333');
         }
 
-        const total = 0;
+        let total = 0;
         for await (const rows of findAllPersons()) {
             rows.length.should.be.eql(5);
             total += rows.length;
