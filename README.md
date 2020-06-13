@@ -32,8 +32,8 @@ const {generate} = require('sql-to-pg')(config);
 /* generated SQL functions have same names as filenames */
 const {
     fns: {
-        findPersonById,
-        findPersonByName,
+        findOnePersonById,
+        findOnePersonByName,
         findAllPersons,
         createOnePerson,
         updateOnePersonById,
@@ -42,7 +42,7 @@ const {
 } = generate('./sql');
 
 (async () => {
-    let rows = await createPerson(1, 'John', 'Smith', 32, '555-1212');
+    let rows = await createOnePerson(1, 'John', 'Smith', 32, '555-1212');
     const person = await findOnePersonById(1);
     console.log(person);
 });
@@ -67,8 +67,8 @@ and return single result for any sql containing the text "SELECT".
 const {generate, withOptions} = require('sql-to-pg')(config);
 const {
     fns: {
-        findPersonById,
-        findPersonByName,
+        findOnePersonById,
+        findOnePersonByName,
         findAllPersons,
         createOnePerson
     }
@@ -77,17 +77,17 @@ const {
 
 #### Override Individual Queries
 
-In the example below, the `createPerson` query has been overridden to not be a transaction, and 
+In the example below, the `createOnePerson` query has been overridden to not be a transaction, and 
 returning single row.
 
 ```
 const {generate, withOptions} = require('sql-to-pg')(config);
 const {
     fns: {
-        findPersonById,
-        findPersonByName,
+        findOnePersonById,
+        findOnePersonByName,
         findAllPersons,
-        createPerson
+        createOnePerson
     }
 } = generate('./sql', withOptions({ createPerson: {single: true, tx: false} );
 ```
