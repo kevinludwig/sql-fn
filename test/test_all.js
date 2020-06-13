@@ -1,6 +1,6 @@
 const path = require('path'),
     chai = require('chai'),
-    {withTransaction, txSeries, txParallel, txWaterfall, generate} = require('../index')({
+    {withOptions, withTransaction, txSeries, txParallel, txWaterfall, generate} = require('../index')({
         user: 'admin',
         password: 'admin',
         port: 5432,
@@ -14,13 +14,14 @@ const {
         createTable,
         createOnePerson,
         findOnePersonById,
+        findAllPersons,
         findAllPersonsByFirstName,
         updateOnePersonById,
         deleteOnePersonById,
         deleteAll
     },
     sql
-} = generate(path.join(__dirname, './sql'));
+} = generate(path.join(__dirname, './sql'), withOptions({findAllPersons: {cursor: 5}}));
 
 describe('sql-to-pg', () => {
     let server;
@@ -93,5 +94,18 @@ describe('sql-to-pg', () => {
 
         const person = await findOnePersonById('23456');
         person.age.should.be.eql(19);
+    });
+
+    it('should return cursor as async generator', async () => {
+        for (let i = 0; i < 25; i++) {
+            await createOnePerson(i.toString(), 'Vera', 'Lynn', 75, '111-222-3333');
+        }
+
+        const total = 0;
+        for await (const rows of findAllPersons()) {
+            rows.length.should.be.eql(5);
+            total += rows.length;
+        }
+        total.should.be.eql(25);
     });
 });

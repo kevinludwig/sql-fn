@@ -29,7 +29,7 @@ const config = {
 };
 
 /* generate code from SQL files */
-const {generate} = require('sql-to-pg')(config);
+const {generate} = require('sql-fn')(config);
 
 /* generated SQL functions have same names as filenames */
 const {
@@ -66,7 +66,7 @@ These rules can be changed, or overridden, for individual queries, via an option
 In the example below, we use the options keys `tx` and `single` to turn transaction wrapping off entirely,
 and return single result for any sql containing the text "SELECT".
 ```
-const {generate, withOptions} = require('sql-to-pg')(config);
+const {generate, withOptions} = require('sql-fn')(config);
 const {
     fns: {
         findOnePersonById,
@@ -83,7 +83,7 @@ In the example below, the `createOnePerson` query has been overridden to not be 
 returning single row.
 
 ```
-const {generate, withOptions} = require('sql-to-pg')(config);
+const {generate, withOptions} = require('sql-fn')(config);
 const {
     fns: {
         findOnePersonById,
@@ -92,6 +92,26 @@ const {
         createOnePerson
     }
 } = generate('./sql', withOptions({ createOnePerson: {single: true, tx: false} );
+```
+
+#### Cursors
+
+Individual queries can be configured to return cursors. This setting overrides both `tx` and `single`, which will not
+be applied for a cursor-returning query.
+
+```
+const {generate, withOptions} = require('sql-fn')(config);
+const {
+    fns: {
+        findAllPersons
+    }
+} = generate('./sq', withOptions({ findAllPersons: {cursor: 100}}));
+
+(async () => {
+    for await (const rows of findAllPersons()) {
+        // write to stream, probably
+    }
+});
 ```
 
 ### Advanced Use Cases
@@ -108,7 +128,7 @@ Execute a series of statements in series, in a transaction
 const config = { ... };
 
 /* generate code from SQL files */
-const {generate, withTransaction, txSeries} = require('sql-to-pg')(config);
+const {generate, withTransaction, txSeries} = require('sql-fn')(config);
 
 /* use sql key to access raw sql query */
 const {
@@ -135,7 +155,7 @@ Execute a series of statements in parallel, in a transaction
 const config = { ... };
 
 /* generate code from SQL files */
-const {generate, withTransaction, txParalel} = require('sql-to-pg')(config);
+const {generate, withTransaction, txParalel} = require('sql-fn')(config);
 
 /* use sql key to access raw sql query */
 const {
@@ -162,7 +182,7 @@ Execute a series of statements in series, where the prior results is passed into
 const config = { ... };
 
 /* generate code from SQL files */
-const {generate, withTransaction, txWaterfall} = require('sql-to-pg')(config);
+const {generate, withTransaction, txWaterfall} = require('sql-fn')(config);
 
 /* use sql key to access raw sql query */
 const {

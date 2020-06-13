@@ -44,14 +44,31 @@ module.exports = (config) => {
         return single ? first(rows) : rows;
     };
 
+    const cursorFn = (sql, n) => async function* (...params) {
+        const client = await pool.connect();
+        try {
+            const cursor = client.query(new Cursor(query, params));
+            const read = promisify(cursor.read.bind(cursor));
+            const close = promisify(cursor.close.bind(cursor));
+
+            for await (const rows of read(n)) {
+                yield rows;
+            }
+            await close();
+        } finally {
+            client.release();
+        }
+    };
+
     const toJS = (options) => ([name, sql]) => {
         let tx = options[name] && options[name].tx;
         let single = options[name] && options[name].single;
+        let cursor = options[name] && options[name].cursor;
 
         if (tx === undefined) tx = options.tx(name, sql);
         if (single === undefined) single = options.single(name, sql);
 
-        const fn = tx ? updateFn(sql, single) : queryFn(sql, single);
+        const fn = cursor ? cursorFn(sql, cursor) : (tx ? updateFn(sql, single) : queryFn(sql, single));
         return [
             name,
             fn
